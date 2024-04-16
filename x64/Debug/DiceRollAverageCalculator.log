@@ -1,0 +1,26 @@
+﻿  DiceRollAverageCalculator.cpp
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\resource.h(21,1): warning C4005: 'IDCANCEL': macro redefinition
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.22000.0\um\winuser.h(11133,1): message : see previous definition of 'IDCANCEL'
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(201,30): warning C4129: 'P': unrecognized character escape sequence
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(221,26): warning C4129: 'P': unrecognized character escape sequence
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(327,29): warning C4244: 'initializing': conversion from 'LRESULT' to 'int', possible loss of data
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(404,62): warning C4312: 'type cast': conversion from 'int' to 'HMENU' of greater size
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(410,63): warning C4312: 'type cast': conversion from 'int' to 'HMENU' of greater size
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(416,1): warning C4312: 'type cast': conversion from 'int' to 'HMENU' of greater size
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(421,1): warning C4312: 'type cast': conversion from 'int' to 'HMENU' of greater size
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(426,1): warning C4312: 'type cast': conversion from 'int' to 'HMENU' of greater size
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(476,31): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(481,68): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(482,68): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(483,69): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(492,56): warning C4267: 'argument': conversion from 'size_t' to 'LONG', possible loss of data
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(493,55): warning C4267: 'argument': conversion from 'size_t' to 'LONG', possible loss of data
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(494,69): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(494,109): warning C4267: 'argument': conversion from 'size_t' to 'LONG', possible loss of data
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(495,69): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(495,109): warning C4267: 'argument': conversion from 'size_t' to 'LONG', possible loss of data
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(496,70): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(496,111): warning C4267: 'argument': conversion from 'size_t' to 'LONG', possible loss of data
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(581,39): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(611,26): warning C4129: 'P': unrecognized character escape sequence
+  DiceRollAverageCalculator.vcxproj -> D:\DiceRollAverage\DiceRollAverageCalculator\x64\Debug\DiceRollAverageCalculator.exe
