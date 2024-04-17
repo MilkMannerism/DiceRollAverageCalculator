@@ -3,6 +3,7 @@
 
 #include "framework.h"
 #include "DiceRollAverageCalculator.h"
+#include "resource.h"
 #include <numeric>
 #include <vector>
 #include <string>
@@ -10,6 +11,7 @@
 #include <sstream>
 #include <fstream>
 #include <shlwapi.h>
+#include <CommCtrl.h>
 #pragma comment(lib, "shlwapi.lib")
 
 #define MAX_LOADSTRING 100
@@ -23,13 +25,14 @@
 
 #define ID_BUTTON_ADD 2001
 #define IDM_SAVE 2002
+#define IDC_GLOBAL_DICE_TYPE 2003
 
 #define ID_BUTTON_SUBMIT_BASE 6000
 #define ID_BUTTON_REMOVE_BASE 7000
 
 #define ID_BUTTON_HISTORY_BASE 8000
 
-std::vector<std::vector<int>> playerRolls;
+std::vector<std::map<std::wstring, std::vector<int>>> playerRolls;
 
 std::vector<HWND> playerEdits; 
 std::vector<HWND> playerLabels;
@@ -57,13 +60,14 @@ INT_PTR CALLBACK    RollHistoryProc(HWND hDlg, UINT message, WPARAM wParam, LPAR
 void                InitializeControls(HWND hWnd); //Custom
 //void                CalculateAndDisplayResults(HWND hWnd); //Custom
 void                RemovePlayer(HWND hWnd, int playerIndex);
-void                AddPlayer(HWND hWnd, const std::wstring& name = L"", const std::vector<int>& rolls = {});
+void                AddPlayer(HWND hWnd, const std::wstring& name = L"", const std::map<std::wstring, std::vector<int>>& rolls = {});
 double              calculateAverage(const std::vector<int>& rolls);
 std::string         findMostFrequent(const std::vector<int>& rolls);
-double              groupAverageExcludingPlayer(const std::vector<std::vector<int>>& allRolls, int excludedPlayerIndex);
+double              groupAverageExcludingPlayer(const std::vector<std::map<std::wstring, std::vector<int>>>& playerRolls, int excludedPlayerIndex, const std::wstring& diceType);
 void                UpdatePlayerStatistics(HWND hWnd, int playerIndex);
+void                SetStatisticsEmpty(HWND hWnd, int playerIndex);
 void                UpdateAllPlayerStatistics(HWND hWnd);
-void                SaveData(const std::wstring& filePath, const std::vector<std::vector<int>>& playerRolls, const std::vector<HWND>& playerLabels);
+void                SaveData(const std::wstring& filePath, const std::vector<std::map<std::wstring, std::vector<int>>>& playerRolls, const std::vector<HWND>& playerLabels);
 std::wstring        GetSaveFilePath();
 void                LoadData(const std::wstring& filePath, HWND hWnd);
 
@@ -74,8 +78,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
-
-    // TODO: Place code here.
 
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -182,6 +184,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         if (!saveFilePath.empty()) {
             LoadData(saveFilePath, hWnd);
         }
+        UpdateAllPlayerStatistics(hWnd);
     }
         break;
     case WM_COMMAND:
@@ -197,47 +200,46 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
                 int result = MessageBox(hWnd, L"Would you like to save before leaving?", L"Confirm Exit", MB_YESNOCANCEL | MB_ICONQUESTION);
                 if (result == IDYES) {
-                    // Call your save function here
-                    SaveData(L"\PlayerAndRollStatsSave.txt", playerRolls, playerLabels);
+                    SaveData(GetSaveFilePath(), playerRolls, playerLabels);
                     DestroyWindow(hWnd); // Proceed to destroy the window after saving
                 }
                 else if (result == IDNO) {
                     DestroyWindow(hWnd); // Close the window without saving
                 }
+                else if (result == IDCANCEL) {
+                    break;
+                }
             }
                 break;
-            break;
-            case ID_BUTTON_CALCULATE:
-                // Here you can retrieve inputs, perform calculations, and set output
-                WCHAR buffer[256];
-                GetDlgItemText(hWnd, ID_EDIT_PEOPLE, buffer, 256);
-                // Convert buffer to an integer or process text as needed
-                SetDlgItemText(hWnd, ID_TEXT_RESULT, L"Result displayed here after processing input.");
+            case IDC_GLOBAL_DICE_TYPE:
+                if (HIWORD(wParam) == CBN_SELCHANGE) {
+                    // Dice type has changed, update all statistics displays
+                    UpdateAllPlayerStatistics(hWnd);
+                }
                 break;
             case ID_BUTTON_ADD:
                 AddPlayer(hWnd);
                 break;
-            case IDM_SAVE:  // Assume IDM_SAVE is defined and linked to a "Save" menu item or button
-                SaveData(L"\PlayerAndRollStatsSave.txt", playerRolls, playerLabels);
+            case IDM_SAVE:
+                SaveData(GetSaveFilePath(), playerRolls, playerLabels);
                 break;
             default:
-                // Handling dynamic button commands for submit and remove
+                // Handling dynamic button commands for submit, remove, and history
                 if (wmId >= ID_BUTTON_SUBMIT_BASE && wmId < ID_BUTTON_SUBMIT_BASE + 100) {
                     int playerIndex = wmId - ID_BUTTON_SUBMIT_BASE;
-                    WCHAR buffer[256];
+                    HWND hGlobalDiceType = GetDlgItem(hWnd, IDC_GLOBAL_DICE_TYPE);
+                    int diceIndex = SendMessage(hGlobalDiceType, CB_GETCURSEL, 0, 0);
+                    WCHAR diceType[10];
+                    SendMessage(hGlobalDiceType, CB_GETLBTEXT, diceIndex, (LPARAM)diceType);
 
-                    // Retrieve the current text from the input box
+                    WCHAR buffer[256];
                     GetDlgItemText(hWnd, 5000 + playerIndex, buffer, 256);
                     int roll = _wtoi(buffer);  // Convert input to integer
 
-                    if (roll != 0 || wcslen(buffer) > 0) {  // Check to make sure the buffer had a number
-                        playerRolls[playerIndex - 1].push_back(roll);  // Store the roll
-                        //MessageBox(hWnd, L"Roll submitted!", L"Success", MB_OK);
-
-                        // Clear the input box after submission
+                    if (roll != 0 || wcslen(buffer) > 0) {
+                        playerRolls[playerIndex - 1][diceType].push_back(roll);
                         SetDlgItemText(hWnd, 5000 + playerIndex, L"");
 
-                        // Update statistics for all players
                         UpdateAllPlayerStatistics(hWnd);
                     }
                     else {
@@ -258,7 +260,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     }
                 }
                 else if (wmId >= ID_BUTTON_HISTORY_BASE && wmId < ID_BUTTON_HISTORY_BASE + 100) {
-                    int playerIndex = (wmId - ID_BUTTON_HISTORY_BASE) - 1;  // This gives 1 for first player, 2 for second, etc.
+                    int playerIndex = (wmId - ID_BUTTON_HISTORY_BASE) - 1;  // Why did the -1 fix this :(
                     // Ensure playerIndex is within range
                     if (playerIndex >= 0 && playerIndex < playerCount) {
                         DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_ROLL_HISTORY), hWnd, RollHistoryProc, (LPARAM)playerIndex);
@@ -283,7 +285,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
         int result = MessageBox(hWnd, L"Would you like to save before leaving?", L"Confirm Exit", MB_YESNOCANCEL | MB_ICONQUESTION);
         if (result == IDYES) {
-            // Assuming SaveData takes care of getting the path and saving all data.
             SaveData(GetSaveFilePath(), playerRolls, playerLabels);
             DestroyWindow(hWnd); // Proceed to destroy the window after saving
         }
@@ -302,38 +303,46 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 INT_PTR CALLBACK RollHistoryProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
-    static int playerIndex;  // Keep track of which player's rolls we're editing
+    static int playerIndex;
+    static std::wstring diceType;
 
     switch (message) {
     case WM_INITDIALOG:
-        playerIndex = (int)lParam; // Cast is necessary as lParam is LPARAM (long pointer)
+        playerIndex = (int)lParam;
         if (playerIndex >= 0 && playerIndex < playerRolls.size()) {
-            for (int roll : playerRolls[playerIndex]) {
+            HWND hGlobalDiceType = GetDlgItem(GetParent(hDlg), IDC_GLOBAL_DICE_TYPE);
+            int diceIndex = SendMessage(hGlobalDiceType, CB_GETCURSEL, 0, 0);
+            WCHAR dtBuffer[10];
+            SendMessage(hGlobalDiceType, CB_GETLBTEXT, diceIndex, (LPARAM)dtBuffer);
+            diceType = dtBuffer;
+
+            for (int roll : playerRolls[playerIndex][diceType]) {
                 WCHAR buffer[32];
                 wsprintf(buffer, L"Roll: %d", roll);
                 SendDlgItemMessage(hDlg, IDC_ROLL_LIST, LB_ADDSTRING, 0, (LPARAM)buffer);
             }
         }
-        else {
-            MessageBox(hDlg, L"Player index is out of range.", L"Error", MB_OK);
-        }
         return (INT_PTR)TRUE;
+
 
     case WM_COMMAND:
         switch (LOWORD(wParam)) {
         case IDC_REMOVE_ROLL:
         {
-            // New block to ensure selectedIdx initialization isn't skipped
             int selectedIdx = SendDlgItemMessage(hDlg, IDC_ROLL_LIST, LB_GETCURSEL, 0, 0);
             if (selectedIdx != LB_ERR) {
                 SendDlgItemMessage(hDlg, IDC_ROLL_LIST, LB_DELETESTRING, selectedIdx, 0);
-                playerRolls[playerIndex].erase(playerRolls[playerIndex].begin() + selectedIdx);
-                UpdateAllPlayerStatistics(hDlg);
+                auto& rolls = playerRolls[playerIndex][diceType];
+                if (selectedIdx < rolls.size()) {
+                    rolls.erase(rolls.begin() + selectedIdx);
+                    UpdateAllPlayerStatistics(GetParent(hDlg));
+                    //UpdatePlayerStatistics(GetParent(hDlg), playerIndex);
+                }
             }
         }
         break;
-        case IDCANCEL:
-            // Close the dialog when the 'Cancel' or 'X' button is pressed
+        case IDCLOSE:
+            // Close the dialog when the 'Cancel' button is pressed
             EndDialog(hDlg, 0);
             return (INT_PTR)TRUE;
         }
@@ -369,9 +378,6 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 
-
-//CODE FROM HERE DOWN IS CUSTOM CLASSES
-
 void InitializeControls(HWND hWnd) {
     // Create "Add Player" button
     CreateWindow(L"BUTTON", L"Add Player",
@@ -382,13 +388,26 @@ void InitializeControls(HWND hWnd) {
     CreateWindow(L"BUTTON", L"Save",
         WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
         160, 10, 120, 25, hWnd, (HMENU)IDM_SAVE, GetModuleHandle(NULL), NULL);
+
+    // Create the dice type drop down menu
+    HWND hGlobalDiceType = CreateWindow(WC_COMBOBOX, L"",
+        CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_CHILD | WS_VISIBLE,
+        290, 10, 100, 300, hWnd, (HMENU)IDC_GLOBAL_DICE_TYPE, GetModuleHandle(NULL), NULL);
+
+    // Define dice types
+    const wchar_t* diceTypes[] = { L"d2", L"d4", L"d6", L"d8", L"d10", L"d12", L"d20", L"d100" };
+    for (const auto& type : diceTypes) {
+        SendMessage(hGlobalDiceType, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(type));
+    }
+    SendMessage(hGlobalDiceType, CB_SETCURSEL, 6, 0);
 }
 
 //Function to add players to the system
-void AddPlayer(HWND hWnd, const std::wstring& name, const std::vector<int>& rolls) {
+void AddPlayer(HWND hWnd, const std::wstring& name, const std::map<std::wstring, std::vector<int>>& rolls) {
     playerCount++;
     int baseY = 40 + 30 * (playerCount - 1);
-
+    std::map<std::wstring, std::vector<int>> diceRolls;
+    const wchar_t* diceTypes[] = { L"d2", L"d4", L"d6", L"d8", L"d10", L"d12", L"d20", L"d100" };
     WCHAR displayName[30];
     if (name.empty()) {
         wsprintf(displayName, L"Player %d", playerCount);
@@ -439,12 +458,13 @@ void AddPlayer(HWND hWnd, const std::wstring& name, const std::vector<int>& roll
     playerStats.push_back(stats); // Add the structure to the vector
 
     if (rolls.empty()) {
-        playerRolls.push_back(std::vector<int>());
+        for (const auto& type : diceTypes) {
+            diceRolls[type] = std::vector<int>();  // Initialize an empty vector for each dice type
+        }
+        playerRolls.push_back(diceRolls);
     }
     else {
         playerRolls.push_back(rolls);
-        // Update the statistics to reflect the loaded data
-        UpdatePlayerStatistics(hWnd, playerCount - 1);
     }
 }
 
@@ -533,47 +553,72 @@ std::string findMostFrequent(const std::vector<int>& rolls) {
     return result;
 }
 
-double groupAverageExcludingPlayer(const std::vector<std::vector<int>>& allRolls, int excludedPlayerIndex) {
+double groupAverageExcludingPlayer(const std::vector<std::map<std::wstring, std::vector<int>>>& playerRolls, int excludedPlayerIndex, const std::wstring& diceType) {
     double totalSum = 0;
     int totalCount = 0;
-    for (size_t i = 0; i < allRolls.size(); ++i) {
+
+    for (size_t i = 0; i < playerRolls.size(); ++i) {
         if (i != excludedPlayerIndex) {
-            for (int roll : allRolls[i]) {
-                totalSum += roll;
-                totalCount++;
+            const auto& rollsMap = playerRolls[i];
+            auto it = rollsMap.find(diceType);
+            if (it != rollsMap.end()) {
+                const std::vector<int>& rolls = it->second;
+                totalSum += std::accumulate(rolls.begin(), rolls.end(), 0);
+                totalCount += rolls.size();
             }
         }
     }
-    return totalCount > 0 ? totalSum / totalCount : 0;
+
+    return totalCount > 0 ? totalSum / totalCount : 0.0;  // Ensure we don't divide by zero
 }
 
 void UpdatePlayerStatistics(HWND hWnd, int playerIndex) {
-    if (playerIndex < 0 || playerIndex >= playerStats.size()) return;
+    if (playerIndex < 0 || playerIndex >= playerRolls.size()) return;
+
+    HWND hGlobalDiceType = GetDlgItem(hWnd, IDC_GLOBAL_DICE_TYPE);
+    int diceIndex = SendMessage(hGlobalDiceType, CB_GETCURSEL, 0, 0);
+    WCHAR diceType[10];
+    SendMessage(hGlobalDiceType, CB_GETLBTEXT, diceIndex, (LPARAM)diceType);
+
+    // Check if the selected dice type has any rolls
+    if (playerRolls[playerIndex].count(diceType) == 0 || playerRolls[playerIndex][diceType].empty()) {
+        SetStatisticsEmpty(hWnd, playerIndex); // Set statistics displays to "empty" or similar message
+        return; // Exit if there are no rolls for the selected type
+    }
+
+    const std::vector<int>& rolls = playerRolls[playerIndex][diceType];
 
     // Calculating statistics
-    double avg = calculateAverage(playerRolls[playerIndex]);
-    std::string mostFreq = findMostFrequent(playerRolls[playerIndex]);
-    int latestRoll = !playerRolls[playerIndex].empty() ? playerRolls[playerIndex].back() : 0;
-    double compAvg = groupAverageExcludingPlayer(playerRolls, playerIndex);
+    double avg = calculateAverage(rolls);
+    std::string mostFreq = findMostFrequent(rolls);
+    int latestRoll = !rolls.empty() ? rolls.back() : 0;
+    double compAvg = groupAverageExcludingPlayer(playerRolls, playerIndex, diceType);
 
     // Formatting and updating the text displays
     WCHAR buffer[256];
-    swprintf(buffer, 256, L"Avg: %.2f", avg);
+    swprintf(buffer, sizeof(buffer) / sizeof(buffer[0]), L"Avg: %.2f", avg);
     SetWindowText(playerStats[playerIndex].hAvg, buffer);
 
-    swprintf(buffer, 256, L"Most Freq: %S", mostFreq.c_str());
+    swprintf(buffer, sizeof(buffer) / sizeof(buffer[0]), L"Most Freq: %S", mostFreq.c_str());
     SetWindowText(playerStats[playerIndex].hMostFreq, buffer);
 
-    swprintf(buffer, 256, L"Latest: %d", latestRoll);
+    swprintf(buffer, sizeof(buffer) / sizeof(buffer[0]), L"Latest: %d", latestRoll);
     SetWindowText(playerStats[playerIndex].hLatest, buffer);
 
     if (compAvg != 0) {
-        swprintf(buffer, 256, L"Comp: %.2f%%", (avg - compAvg) / compAvg * 100);
+        swprintf(buffer, sizeof(buffer) / sizeof(buffer[0]), L"Comp: %.2f%%", (avg - compAvg) / compAvg * 100);
     }
     else {
-        wcscpy_s(buffer, L"Comp: N/A");  // Handle division by zero or undefined comparison
+        wcscpy_s(buffer, L"Comp: N/A");
     }
     SetWindowText(playerStats[playerIndex].hComparison, buffer);
+}
+
+void SetStatisticsEmpty(HWND hWnd, int playerIndex) {
+    SetWindowText(playerStats[playerIndex].hAvg, L"N/A");
+    SetWindowText(playerStats[playerIndex].hMostFreq, L"N/A");
+    SetWindowText(playerStats[playerIndex].hLatest, L"N/A");
+    SetWindowText(playerStats[playerIndex].hComparison, L"N/A");
 }
 
 void UpdateAllPlayerStatistics(HWND hWnd) {
@@ -581,8 +626,7 @@ void UpdateAllPlayerStatistics(HWND hWnd) {
         UpdatePlayerStatistics(hWnd, i);
     }
 }
-
-void SaveData(const std::wstring& filePath, const std::vector<std::vector<int>>& playerRolls, const std::vector<HWND>& playerLabels) {
+void SaveData(const std::wstring& filePath, const std::vector<std::map<std::wstring, std::vector<int>>>& playerRolls, const std::vector<HWND>& playerLabels) {
     std::wofstream outFile(filePath);
     if (!outFile.is_open()) {
         MessageBox(NULL, L"Failed to open file for writing.", L"Error", MB_ICONERROR);
@@ -590,14 +634,27 @@ void SaveData(const std::wstring& filePath, const std::vector<std::vector<int>>&
     }
 
     wchar_t buffer[256];
+    wchar_t debugOutput[512];  // Make sure this buffer is large enough to hold the final string
     for (size_t i = 0; i < playerRolls.size(); ++i) {
-        GetWindowText(playerLabels[i], buffer, 256);  // Get the player name from the edit control
-        outFile << buffer << L",";  // Save player name
+        GetWindowText(playerLabels[i], buffer, 256);
 
-        for (int roll : playerRolls[i]) {
-            outFile << roll << L",";  // Save each roll
+        // Format the debug string
+        swprintf(debugOutput, sizeof(debugOutput) / sizeof(wchar_t), L"\n%s \n", buffer);
+
+        // Send the formatted string to the debug output
+        OutputDebugString(debugOutput);
+        outFile << buffer; // Save player name
+
+        for (const auto& pair : playerRolls[i]) {
+            const auto& diceType = pair.first;
+            const auto& rolls = pair.second;
+            for (int roll : rolls) {
+                std::wstring debugOutput = L"Saving " + diceType + L":" + std::to_wstring(roll) + L"\n";
+                OutputDebugString(debugOutput.c_str());
+                outFile << L"," << diceType << L":" << roll;
+            }
         }
-        outFile << std::endl;  // New line for next player
+        outFile << std::endl;
     }
 
     outFile.close();
@@ -622,23 +679,26 @@ void LoadData(const std::wstring& filePath, HWND hWnd) {
     }
 
     std::wstring line;
+    const wchar_t* diceTypes[] = { L"d2", L"d4", L"d6", L"d8", L"d10", L"d12", L"d20", L"d100" };
     while (std::getline(inFile, line)) {
         std::wistringstream iss(line);
-        std::wstring part;
-        std::vector<int> rolls;
+        std::wstring name, part;
+        std::map<std::wstring, std::vector<int>> rollsForTypes;
 
-        std::getline(iss, part, L',');
-        std::wstring name = part;
-
-        while (std::getline(iss, part, L',')) {
-            if (part.empty()) continue;
-            std::wistringstream rollStream(part);
-            int roll;
-            if (rollStream >> roll) { 
-                rolls.push_back(roll);
-            }
+        // Initialize empty vectors for each dice type
+        for (const wchar_t* type : diceTypes) {
+            rollsForTypes[type];
         }
 
-        AddPlayer(hWnd, name, rolls);
+        std::getline(iss, name, L',');  // First entry is the player name
+        while (std::getline(iss, part, L',')) {
+            size_t pos = part.find(':');
+            if (pos != std::wstring::npos) {
+                std::wstring diceType = part.substr(0, pos);
+                int roll = std::stoi(part.substr(pos + 1));
+                rollsForTypes[diceType].push_back(roll);
+            }
+        }
+        AddPlayer(hWnd, name, rollsForTypes);
     }
 }

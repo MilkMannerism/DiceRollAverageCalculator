@@ -18,7 +18,7 @@
 #define IDD_ROLL_HISTORY 501
 #define IDC_ROLL_LIST    502
 #define IDC_REMOVE_ROLL  503
-#define IDCANCEL         504
+#define IDCLOSE         504
 
 // Next default values for new objects
 // 
