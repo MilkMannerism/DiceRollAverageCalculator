@@ -341,7 +341,7 @@ INT_PTR CALLBACK RollHistoryProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             }
         }
         break;
-        case IDCLOSE:
+        case IDC_CLOSE_BUTTON:
             // Close the dialog when the 'Cancel' button is pressed
             EndDialog(hDlg, 0);
             return (INT_PTR)TRUE;
