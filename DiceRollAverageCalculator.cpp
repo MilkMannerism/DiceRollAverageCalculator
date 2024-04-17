@@ -57,8 +57,7 @@ BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    RollHistoryProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-void                InitializeControls(HWND hWnd); //Custom
-//void                CalculateAndDisplayResults(HWND hWnd); //Custom
+void                InitializeControls(HWND hWnd);
 void                RemovePlayer(HWND hWnd, int playerIndex);
 void                AddPlayer(HWND hWnd, const std::wstring& name = L"", const std::map<std::wstring, std::vector<int>>& rolls = {});
 double              calculateAverage(const std::vector<int>& rolls);
@@ -260,7 +259,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     }
                 }
                 else if (wmId >= ID_BUTTON_HISTORY_BASE && wmId < ID_BUTTON_HISTORY_BASE + 100) {
-                    int playerIndex = (wmId - ID_BUTTON_HISTORY_BASE) - 1;  // Why did the -1 fix this :(
+                    int playerIndex = wmId - ID_BUTTON_HISTORY_BASE - 1;  // Why did the -1 fix this :( NOTE::Player index starts at 1 which is why -1 is needed
                     // Ensure playerIndex is within range
                     if (playerIndex >= 0 && playerIndex < playerCount) {
                         DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_ROLL_HISTORY), hWnd, RollHistoryProc, (LPARAM)playerIndex);
@@ -292,6 +291,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             DestroyWindow(hWnd); // Close the window without saving
         }
         // If result is IDCANCEL, do nothing, effectively cancelling the close.
+        //This does not currently work, hitting the red X will always close the app after this popup
     }
     case WM_DESTROY:
         PostQuitMessage(0);
@@ -336,7 +336,6 @@ INT_PTR CALLBACK RollHistoryProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
                 if (selectedIdx < rolls.size()) {
                     rolls.erase(rolls.begin() + selectedIdx);
                     UpdateAllPlayerStatistics(GetParent(hDlg));
-                    //UpdatePlayerStatistics(GetParent(hDlg), playerIndex);
                 }
             }
         }
@@ -640,7 +639,7 @@ void SaveData(const std::wstring& filePath, const std::vector<std::map<std::wstr
     }
 
     wchar_t buffer[256];
-    wchar_t debugOutput[512];  // Make sure this buffer is large enough to hold the final string
+    wchar_t debugOutput[512];  // Make sure this buffer is large enough to hold the final string. Could work with 256 but after the roll history builds up enough it would fall out of range
     for (size_t i = 0; i < playerRolls.size(); ++i) {
         GetWindowText(playerLabels[i], buffer, 256);
 
