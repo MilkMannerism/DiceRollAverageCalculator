@@ -472,14 +472,13 @@ void AddPlayer(HWND hWnd, const std::wstring& name, const std::map<std::wstring,
 void RemovePlayer(HWND hWnd, int playerIndex) {
     int arrayIndex = playerIndex - 1;
 
-    // Destroy controls for player details
+    // Destroy controls for the player being removed
     DestroyWindow(playerLabels[arrayIndex]);
     DestroyWindow(playerEdits[arrayIndex]);
     DestroyWindow(GetDlgItem(hWnd, ID_BUTTON_SUBMIT_BASE + playerIndex));
     DestroyWindow(GetDlgItem(hWnd, ID_BUTTON_REMOVE_BASE + playerIndex));
     DestroyWindow(GetDlgItem(hWnd, ID_BUTTON_HISTORY_BASE + playerIndex));
 
-    // Destroy statistic controls
     DestroyWindow(playerStats[arrayIndex].hAvg);
     DestroyWindow(playerStats[arrayIndex].hMostFreq);
     DestroyWindow(playerStats[arrayIndex].hLatest);
@@ -491,31 +490,38 @@ void RemovePlayer(HWND hWnd, int playerIndex) {
     playerRolls.erase(playerRolls.begin() + arrayIndex);
     playerStats.erase(playerStats.begin() + arrayIndex);
 
-    // Decrease IDs of all subsequent players and move their controls up
+    // Decrease IDs and positions of all subsequent players
     for (size_t i = arrayIndex; i < playerLabels.size(); ++i) {
         int newY = 40 + 30 * i;
 
-        // Move player details controls
         SetWindowPos(playerLabels[i], HWND_TOP, 50, newY, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
         SetWindowPos(playerEdits[i], HWND_TOP, 160, newY, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
-        SetWindowPos(GetDlgItem(hWnd, ID_BUTTON_SUBMIT_BASE + i + 1), HWND_TOP, 270, newY, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
-        SetWindowPos(GetDlgItem(hWnd, ID_BUTTON_REMOVE_BASE + i + 1), HWND_TOP, 340, newY, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
-        SetWindowPos(GetDlgItem(hWnd, ID_BUTTON_HISTORY_BASE + i + 1), HWND_TOP, 370, newY, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 
-        // Move statistic controls
+        // Move and update the submit, remove, and history buttons
+        HWND submitButton = GetDlgItem(hWnd, ID_BUTTON_SUBMIT_BASE + i + 2);
+        HWND removeButton = GetDlgItem(hWnd, ID_BUTTON_REMOVE_BASE + i + 2);
+        HWND historyButton = GetDlgItem(hWnd, ID_BUTTON_HISTORY_BASE + i + 2);
+
+        SetWindowPos(submitButton, HWND_TOP, 270, newY, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+        SetWindowPos(removeButton, HWND_TOP, 340, newY, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+        SetWindowPos(historyButton, HWND_TOP, 370, newY, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+
+        // Correctly update control IDs
+        SetWindowLong(submitButton, GWL_ID, ID_BUTTON_SUBMIT_BASE + i + 1);
+        SetWindowLong(removeButton, GWL_ID, ID_BUTTON_REMOVE_BASE + i + 1);
+        SetWindowLong(historyButton, GWL_ID, ID_BUTTON_HISTORY_BASE + i + 1);
+
+        SetWindowLong(playerLabels[i], GWL_ID, 5100 + i + 1);
+        SetWindowLong(playerEdits[i], GWL_ID, 5000 + i + 1);
+
+        // Move and update statistic controls
         SetWindowPos(playerStats[i].hAvg, HWND_TOP, 440, newY, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
         SetWindowPos(playerStats[i].hMostFreq, HWND_TOP, 550, newY, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
         SetWindowPos(playerStats[i].hLatest, HWND_TOP, 710, newY, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
         SetWindowPos(playerStats[i].hComparison, HWND_TOP, 820, newY, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
-
-        // Update control IDs as needed
-        SetWindowLong(playerLabels[i], GWL_ID, 5100 + i);
-        SetWindowLong(playerEdits[i], GWL_ID, 5000 + i);
-        SetWindowLong(GetDlgItem(hWnd, ID_BUTTON_SUBMIT_BASE + i + 1), GWL_ID, ID_BUTTON_SUBMIT_BASE + i + 1);
-        SetWindowLong(GetDlgItem(hWnd, ID_BUTTON_REMOVE_BASE + i + 1), GWL_ID, ID_BUTTON_REMOVE_BASE + i + 1);
-        SetWindowLong(GetDlgItem(hWnd, ID_BUTTON_HISTORY_BASE + i + 1), GWL_ID, ID_BUTTON_HISTORY_BASE + i + 1);
     }
 
+    // Update player count
     playerCount--;
 }
 
