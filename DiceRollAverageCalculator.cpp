@@ -62,7 +62,7 @@ void                RemovePlayer(HWND hWnd, int playerIndex);
 void                AddPlayer(HWND hWnd, const std::wstring& name = L"", const std::map<std::wstring, std::vector<int>>& rolls = {});
 double              calculateAverage(const std::vector<int>& rolls);
 std::string         findMostFrequent(const std::vector<int>& rolls);
-double              groupAverageExcludingPlayer(const std::vector<std::map<std::wstring, std::vector<int>>>& playerRolls, int excludedPlayerIndex, const std::wstring& diceType);
+double              calculateOverallPartyAverage(const std::vector<std::map<std::wstring, std::vector<int>>>& playerRolls, const std::wstring& diceType);
 void                UpdatePlayerStatistics(HWND hWnd, int playerIndex);
 void                SetStatisticsEmpty(HWND hWnd, int playerIndex);
 void                UpdateAllPlayerStatistics(HWND hWnd);
@@ -558,23 +558,19 @@ std::string findMostFrequent(const std::vector<int>& rolls) {
     return result;
 }
 
-double groupAverageExcludingPlayer(const std::vector<std::map<std::wstring, std::vector<int>>>& playerRolls, int excludedPlayerIndex, const std::wstring& diceType) {
+double calculateOverallPartyAverage(const std::vector<std::map<std::wstring, std::vector<int>>>& playerRolls, const std::wstring& diceType) {
     double totalSum = 0;
     int totalCount = 0;
 
-    for (size_t i = 0; i < playerRolls.size(); ++i) {
-        if (i != excludedPlayerIndex) {
-            const auto& rollsMap = playerRolls[i];
-            auto it = rollsMap.find(diceType);
-            if (it != rollsMap.end()) {
-                const std::vector<int>& rolls = it->second;
-                totalSum += std::accumulate(rolls.begin(), rolls.end(), 0);
-                totalCount += rolls.size();
-            }
+    for (const auto& player : playerRolls) {
+        auto it = player.find(diceType);
+        if (it != player.end()) {
+            totalSum += std::accumulate(it->second.begin(), it->second.end(), 0);
+            totalCount += it->second.size();
         }
     }
 
-    return totalCount > 0 ? totalSum / totalCount : 0.0;  // Ensure we don't divide by zero
+    return totalCount > 0 ? totalSum / totalCount : 0.0;
 }
 
 void UpdatePlayerStatistics(HWND hWnd, int playerIndex) {
@@ -597,7 +593,7 @@ void UpdatePlayerStatistics(HWND hWnd, int playerIndex) {
     double avg = calculateAverage(rolls);
     std::string mostFreq = findMostFrequent(rolls);
     int latestRoll = !rolls.empty() ? rolls.back() : 0;
-    double compAvg = groupAverageExcludingPlayer(playerRolls, playerIndex, diceType);
+    double compAvg = calculateOverallPartyAverage(playerRolls, diceType);
 
     // Formatting and updating the text displays
     WCHAR buffer[256];

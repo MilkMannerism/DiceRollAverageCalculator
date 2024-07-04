@@ -16,13 +16,12 @@ D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollA
 D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(511,76): warning C4267: 'argument': conversion from 'size_t' to 'LONG', possible loss of data
 D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(513,60): warning C4267: 'argument': conversion from 'size_t' to 'LONG', possible loss of data
 D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(514,59): warning C4267: 'argument': conversion from 'size_t' to 'LONG', possible loss of data
-D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(572,41): warning C4267: '+=': conversion from 'size_t' to 'int', possible loss of data
-D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(584,19): warning C4244: 'initializing': conversion from 'LRESULT' to 'int', possible loss of data
-D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(631,39): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(673,26): warning C4129: 'P': unrecognized character escape sequence
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(569,42): warning C4267: '+=': conversion from 'size_t' to 'int', possible loss of data
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(580,19): warning C4244: 'initializing': conversion from 'LRESULT' to 'int', possible loss of data
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(627,39): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+D:\DiceRollAverage\DiceRollAverageCalculator\DiceRollAverageCalculator\DiceRollAverageCalculator.cpp(669,26): warning C4129: 'P': unrecognized character escape sequence
   Generating code
-  2 of 878 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    1 functions had inline decision re-evaluated but remain unchanged
+  Previous IPDB not found, fall back to full compilation.
+  All 880 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   Finished generating code
   DiceRollAverageCalculator.vcxproj -> D:\DiceRollAverage\DiceRollAverageCalculator\x64\Release\DiceRollAverageCalculator.exe
